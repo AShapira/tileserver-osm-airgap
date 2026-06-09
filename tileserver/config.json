@@ -1,0 +1,83 @@
+{
+  "options": {
+    "paths": {
+      "root": "",
+      "fonts": "fonts",
+      "sprites": "sprites",
+      "icons": "icons",
+      "styles": "styles",
+      "mbtiles": "data",
+      "pmtiles": "data",
+      "files": "files"
+    },
+    "domains": [
+      "localhost:8080",
+      "127.0.0.1:8080"
+    ],
+    "serveAllFonts": true,
+    "serveAllStyles": true,
+    "serveStaticMaps": true,
+    "allowRemoteMarkerIcons": false,
+    "allowInlineMarkerImages": false,
+    "formatOptions": {
+      "png": {
+        "palette": true
+      },
+      "jpeg": {
+        "quality": 85
+      },
+      "webp": {
+        "quality": 90
+      }
+    },
+    "maxScaleFactor": 3,
+    "maxSize": 2048,
+    "staticAttributionText": "© OpenStreetMap contributors © OpenMapTiles"
+  },
+  "styles": {
+    "osm-bright": {
+      "style": "osm-bright.json",
+      "tilejson": {
+        "type": "baselayer",
+        "format": "png"
+      }
+    },
+    "dark-matter": {
+      "style": "dark-matter.json",
+      "tilejson": {
+        "type": "baselayer",
+        "format": "png"
+      }
+    },
+    "osm-openmaptiles": {
+      "style": "osm-openmaptiles.json",
+      "tilejson": {
+        "type": "baselayer",
+        "format": "png"
+      }
+    },
+    "osm-liberty": {
+      "style": "osm-liberty.json",
+      "tilejson": {
+        "type": "baselayer",
+        "format": "png"
+      }
+    }
+  },
+  "data": {
+    "osm-vector": {
+      "mbtiles": "osm-vector.mbtiles"
+    },
+    "raster-demo-low": {
+      "mbtiles": "raster-demo-low.mbtiles",
+      "sparse": true,
+      "tileSize": 256
+    },
+    "raster-demo-high": {
+      "mbtiles": "raster-demo-high.mbtiles",
+      "sparse": true,
+      "tileSize": 256
+    }
+  }
+}
+

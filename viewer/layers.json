@@ -1,0 +1,46 @@
+{
+  "tileServerUrl": "http://localhost:8080",
+  "defaultBaseStyle": "osm-bright",
+  "baseStyles": [
+    {
+      "id": "osm-bright",
+      "label": "OSM Bright",
+      "url": "/styles/osm-bright/style.json"
+    },
+    {
+      "id": "dark-matter",
+      "label": "Dark Matter",
+      "url": "/styles/dark-matter/style.json"
+    },
+    {
+      "id": "osm-openmaptiles",
+      "label": "OSM OpenMapTiles",
+      "url": "/styles/osm-openmaptiles/style.json"
+    },
+    {
+      "id": "osm-liberty",
+      "label": "OSM Liberty",
+      "url": "/styles/osm-liberty/style.json"
+    }
+  ],
+  "rasterOverlays": [
+    {
+      "id": "raster-demo-low",
+      "label": "Raster low scale",
+      "tiles": "/data/raster-demo-low/{z}/{x}/{y}.png",
+      "minzoom": 0,
+      "maxzoom": 8,
+      "opacity": 0.55,
+      "visible": true
+    },
+    {
+      "id": "raster-demo-high",
+      "label": "Raster high scale",
+      "tiles": "/data/raster-demo-high/{z}/{x}/{y}.png",
+      "minzoom": 7,
+      "maxzoom": 14,
+      "opacity": 0.65,
+      "visible": false
+    }
+  ]
+}

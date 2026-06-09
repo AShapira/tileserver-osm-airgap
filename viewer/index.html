@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Tileserver OSM Airgap Viewer</title>
+    <link rel="stylesheet" href="./vendor/maplibre-gl.css">
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <aside class="panel" aria-label="Map controls">
+        <header class="panel-header">
+          <h1>Airgap Maps</h1>
+          <span id="status" class="status">Loading</span>
+        </header>
+
+        <section class="control-group">
+          <label for="base-style">Base</label>
+          <select id="base-style"></select>
+        </section>
+
+        <section class="control-group">
+          <div class="group-label">Raster overlays</div>
+          <div id="overlay-list" class="overlay-list"></div>
+        </section>
+      </aside>
+
+      <section id="map" class="map" aria-label="Map"></section>
+    </main>
+
+    <script src="./vendor/maplibre-gl.js"></script>
+    <script>
+      const params = new URLSearchParams(window.location.search);
+      let configuredTileServer = params.get("tileserver");
+      let map;
+      let layerConfig;
+
+      const statusEl = document.getElementById("status");
+      const baseSelect = document.getElementById("base-style");
+      const overlayList = document.getElementById("overlay-list");
+
+      function setStatus(text, state = "") {
+        statusEl.textContent = text;
+        statusEl.dataset.state = state;
+      }
+
+      function tileServerUrl() {
+        return (configuredTileServer || layerConfig.tileServerUrl || "http://localhost:8080").replace(/\/$/, "");
+      }
+
+      function absoluteTileServerUrl(path) {
+        if (/^https?:\/\//i.test(path)) return path;
+        return `${tileServerUrl()}${path.startsWith("/") ? path : `/${path}`}`;
+      }
+
+      function styleUrl(style) {
+        return absoluteTileServerUrl(style.url);
+      }
+
+      async function vectorTileJson() {
+        const response = await fetch(absoluteTileServerUrl("/data/osm-vector.json"), { cache: "no-store" });
+        return response.json();
+      }
+
+      async function loadBaseStyle(style) {
+        const [styleResponse, tileJson] = await Promise.all([
+          fetch(styleUrl(style), { cache: "no-store" }),
+          vectorTileJson()
+        ]);
+        const styleJson = await styleResponse.json();
+        const availableLayers = new Set((tileJson.vector_layers || []).map((layer) => layer.id));
+        styleJson.sources.openmaptiles = {
+          type: "vector",
+          tiles: [
+            absoluteTileServerUrl("/data/osm-vector/{z}/{x}/{y}.pbf")
+          ],
+          minzoom: Number(tileJson.minzoom || 0),
+          maxzoom: Number(tileJson.maxzoom || 14),
+          attribution: tileJson.attribution
+        };
+        styleJson.layers = (styleJson.layers || []).filter((layer) => {
+          return !layer["source-layer"] || availableLayers.has(layer["source-layer"]);
+        });
+        return styleJson;
+      }
+
+      function overlayLayerId(id) {
+        return `overlay-${id}`;
+      }
+
+      function addOverlay(overlay) {
+        const sourceId = overlay.id;
+        const layerId = overlayLayerId(overlay.id);
+
+        if (!map.getSource(sourceId)) {
+          map.addSource(sourceId, {
+            type: "raster",
+            tiles: [
+              absoluteTileServerUrl(overlay.tiles || `/data/${overlay.id}/{z}/{x}/{y}.png`)
+            ],
+            tileSize: overlay.tileSize || 256,
+            minzoom: overlay.minzoom || 0,
+            maxzoom: overlay.maxzoom || 22
+          });
+        }
+
+        if (!map.getLayer(layerId)) {
+          map.addLayer({
+            id: layerId,
+            type: "raster",
+            source: sourceId,
+            minzoom: overlay.minzoom || 0,
+            maxzoom: overlay.maxzoom || 22,
+            paint: {
+              "raster-opacity": overlay.opacity ?? 0.6,
+              "raster-resampling": "linear"
+            },
+            layout: {
+              visibility: overlay.visible ? "visible" : "none"
+            }
+          });
+        }
+      }
+
+      function syncOverlays() {
+        layerConfig.rasterOverlays.forEach(addOverlay);
+      }
+
+      function completeStyleChange() {
+        try {
+          syncOverlays();
+          setStatus("Ready", "ok");
+        } catch (error) {
+          window.setTimeout(completeStyleChange, 250);
+        }
+      }
+
+      function renderOverlayControls() {
+        overlayList.innerHTML = "";
+        layerConfig.rasterOverlays.forEach((overlay) => {
+          const row = document.createElement("div");
+          row.className = "overlay-row";
+
+          const check = document.createElement("input");
+          check.type = "checkbox";
+          check.id = `toggle-${overlay.id}`;
+          check.checked = Boolean(overlay.visible);
+          check.addEventListener("change", () => {
+            overlay.visible = check.checked;
+            const layerId = overlayLayerId(overlay.id);
+            if (map && map.getLayer(layerId)) {
+              map.setLayoutProperty(layerId, "visibility", check.checked ? "visible" : "none");
+            }
+          });
+
+          const label = document.createElement("label");
+          label.htmlFor = check.id;
+          label.textContent = overlay.label;
+
+          const opacity = document.createElement("input");
+          opacity.type = "range";
+          opacity.min = "0";
+          opacity.max = "1";
+          opacity.step = "0.05";
+          opacity.value = String(overlay.opacity ?? 0.6);
+          opacity.title = `${overlay.label} opacity`;
+          opacity.addEventListener("input", () => {
+            overlay.opacity = Number(opacity.value);
+            const layerId = overlayLayerId(overlay.id);
+            if (map && map.getLayer(layerId)) {
+              map.setPaintProperty(layerId, "raster-opacity", overlay.opacity);
+            }
+          });
+
+          row.append(check, label, opacity);
+          overlayList.append(row);
+        });
+      }
+
+      function renderBaseControls() {
+        baseSelect.innerHTML = "";
+        layerConfig.baseStyles.forEach((style) => {
+          const option = document.createElement("option");
+          option.value = style.id;
+          option.textContent = style.label;
+          baseSelect.append(option);
+        });
+        baseSelect.value = layerConfig.defaultBaseStyle;
+        baseSelect.addEventListener("change", () => {
+          const nextStyle = layerConfig.baseStyles.find((style) => style.id === baseSelect.value);
+          if (nextStyle) {
+            setStatus("Switching", "pending");
+            loadBaseStyle(nextStyle)
+              .then((styleJson) => {
+                map.once("style.load", completeStyleChange);
+                map.setStyle(styleJson);
+                window.setTimeout(completeStyleChange, 1500);
+              })
+              .catch((error) => {
+                setStatus("Style error", "error");
+                console.error(error);
+              });
+          }
+        });
+      }
+
+      async function start() {
+        const response = await fetch("./layers.json", { cache: "no-store" });
+        layerConfig = await response.json();
+        renderBaseControls();
+        renderOverlayControls();
+
+        const initialStyle = layerConfig.baseStyles.find((style) => style.id === layerConfig.defaultBaseStyle) || layerConfig.baseStyles[0];
+        const initialStyleJson = await loadBaseStyle(initialStyle);
+        map = new maplibregl.Map({
+          container: "map",
+          style: initialStyleJson,
+          center: [0, 20],
+          zoom: 2,
+          hash: true
+        });
+
+        map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
+        map.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-left");
+
+        map.on("style.load", () => {
+          syncOverlays();
+          setStatus("Ready", "ok");
+        });
+        map.on("error", (event) => {
+          const message = event?.error?.message || "Map error";
+          if (message.includes("Source layer") && message.includes("does not exist")) {
+            return;
+          }
+          setStatus(message.length > 32 ? `${message.slice(0, 29)}...` : message, "error");
+          console.error(event.error || event);
+        });
+      }
+
+      start().catch((error) => {
+        setStatus("Config error", "error");
+        console.error(error);
+      });
+    </script>
+  </body>
+</html>
