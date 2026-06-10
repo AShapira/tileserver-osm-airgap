@@ -1,6 +1,6 @@
 services:
   tileserver:
-    image: ${TILESERVER_IMAGE:-maptiler/tileserver-gl:latest}
+    image: ${TILESERVER_IMAGE:?Set TILESERVER_IMAGE to its Artifactory image path}
     command: ["-c", "config.json"]
     ports:
       - "${TILESERVER_PORT:-8080}:8080"
@@ -15,7 +15,7 @@ services:
     restart: unless-stopped
 
   viewer:
-    image: nginx:alpine
+    image: ${VIEWER_IMAGE:?Set VIEWER_IMAGE to its Artifactory image path}
     ports:
       - "${VIEWER_PORT:-8081}:80"
     volumes:
@@ -25,7 +25,7 @@ services:
     restart: unless-stopped
 
   planetiler:
-    image: ${PLANETILER_IMAGE:-ghcr.io/onthegomap/planetiler:latest}
+    image: ${PLANETILER_IMAGE:?Set PLANETILER_IMAGE to its Artifactory image path}
     profiles: ["generate"]
     environment:
       JAVA_TOOL_OPTIONS: ${PLANETILER_JAVA_OPTS:--Xmx4g}

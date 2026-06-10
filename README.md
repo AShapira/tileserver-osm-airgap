@@ -6,6 +6,7 @@ Docker Compose stack for serving air-gapped OpenStreetMap vector MBTiles and ras
 
 ```powershell
 Copy-Item .env.example .env
+# Edit .env so all three image variables point to Artifactory.
 .\scripts\vendor-assets.ps1
 .\scripts\generate-demo-raster-mbtiles.ps1
 
@@ -49,12 +50,13 @@ viewer/
 # Generate vector MBTiles from an existing PBF
 .\scripts\generate-vector-mbtiles.ps1 -Pbf data/input/source.osm.pbf
 
-# Prepare a transferable offline bundle
+# Prepare transferable non-image assets and a deployment manifest
 .\scripts\prepare-online-bundle.ps1
 
-# On the offline host
+# On the air-gapped host, pull images from Artifactory and start the stack
 .\scripts\load-airgap-bundle.ps1
 ```
 
-See [docs/manual.md](docs/manual.md) for the full step-by-step workflow.
+All container images are expected to be available from Artifactory inside the air-gapped network. The project does not download public images, export image tar files, or transfer images between networks. Set `TILESERVER_IMAGE`, `VIEWER_IMAGE`, and `PLANETILER_IMAGE` in `.env` to their full Artifactory paths; Docker registry authentication is assumed to be configured on the host.
 
+See [docs/manual.md](docs/manual.md) for the full step-by-step workflow.

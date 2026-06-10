@@ -8,7 +8,7 @@ data/*.tsv.gz
 !data/input/.gitkeep
 !data/mbtiles/.gitkeep
 
-# Air-gap bundles, upstream caches, and image exports
+# Generated air-gap manifests, upstream caches, and local archives
 dist/*
 !dist/airgap/
 dist/airgap/*

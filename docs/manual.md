@@ -6,15 +6,33 @@
 - Git.
 - Python 3 for the synthetic demo raster MBTiles script.
 - PowerShell 7 or Windows PowerShell. Bash wrappers are included for Linux hosts that also have `pwsh`.
+- Network access to the internal Artifactory Docker registry and Docker authentication configured on each host.
 
-The runtime tile server is `maptiler/tileserver-gl`. Vector MBTiles generation uses `ghcr.io/onthegomap/planetiler`.
+TileServer GL, Planetiler, and Nginx images must already be mirrored in Artifactory. This project does not pull images from public registries or create, copy, and load Docker image archives.
 
-## 2. First Online Preparation
+## 2. Configure Artifactory Images
 
-From the repo root:
+Create the local environment file:
 
 ```powershell
 Copy-Item .env.example .env
+```
+
+Edit `.env` and replace the example host and repository paths with the full Artifactory references available in the air-gapped network:
+
+```text
+TILESERVER_IMAGE=artifactory.example.com/docker/maptiler/tileserver-gl:latest
+VIEWER_IMAGE=artifactory.example.com/docker/library/nginx:alpine
+PLANETILER_IMAGE=artifactory.example.com/docker/onthegomap/planetiler:latest
+```
+
+The exact Artifactory repository layout may differ. The image variables are mandatory so Docker Compose cannot fall back to Docker Hub or GHCR.
+
+## 3. Prepare Non-Image Assets
+
+On a preparation machine with access to the required web and style sources, run from the repo root:
+
+```powershell
 .\scripts\vendor-assets.ps1
 .\scripts\generate-demo-raster-mbtiles.ps1
 docker compose config
@@ -29,9 +47,9 @@ docker compose config
 - The subset of OpenMapTiles fonts referenced by the bundled styles.
 - Style sprites.
 
-The script rewrites style `sources`, `glyphs`, font stacks, and `sprite` URLs to local TileServer paths. It copies only the required glyph PBF directories and excludes upstream ZIP archives.
+The script rewrites style `sources`, `glyphs`, font stacks, and `sprite` URLs to local TileServer paths. It copies only the required glyph PBF directories and excludes upstream ZIP archives. These web and style assets are copied with the repository; they are separate from container images supplied by Artifactory.
 
-## 3. Generate Vector MBTiles from an Existing PBF
+## 4. Generate Vector MBTiles from an Existing PBF
 
 Place the input file under `data/input/`, for example:
 
@@ -47,7 +65,7 @@ Generate OpenMapTiles-compatible vector MBTiles:
   -Output data/mbtiles/osm-vector.mbtiles
 ```
 
-By default, the script passes `--download` to Planetiler so it can fetch required OpenMapTiles profile support data during online preparation. For an offline host that already has the support data cached under `data/`, run:
+By default, the script passes `--download` to Planetiler so it can fetch required OpenMapTiles profile support data during asset preparation. For an air-gapped host that already has the support data cached under `data/`, run:
 
 ```powershell
 .\scripts\generate-vector-mbtiles.ps1 `
@@ -64,7 +82,7 @@ PLANETILER_JAVA_OPTS=-Xmx32g
 
 Planetiler needs fast disk and temporary space. Budget several times the PBF size for working data.
 
-## 4. Add Existing Raster MBTiles
+## 5. Add Existing Raster MBTiles
 
 Copy existing raster MBTiles into:
 
@@ -90,11 +108,14 @@ Example:
 
 TileServer GL reads MBTiles metadata for format and bounds. If a raster source uses 512 px tiles, set `"tileSize": 512` in `tileserver/config.json`.
 
-## 5. Run the Stack
+## 6. Run the Stack
 
 ```powershell
+docker compose pull tileserver viewer
 docker compose up -d tileserver viewer
 ```
+
+Both commands use the Artifactory image references from `.env`. No Docker image tar is required.
 
 Open:
 
@@ -103,25 +124,29 @@ Open:
 
 Use the viewer to switch among OSM Bright, Dark Matter, OSM OpenMapTiles, and OSM Liberty, then toggle raster overlays.
 
-## 6. Air-Gapped Bundle
+## 7. Air-Gapped Deployment Bundle
 
-On an internet-connected machine:
+On the asset preparation machine:
 
 ```powershell
 .\scripts\prepare-online-bundle.ps1
 ```
 
-Copy the repo directory and `dist/airgap/docker-images.tar` to the offline host.
+This vendors the non-image web/style assets, optionally creates demo raster MBTiles, and writes `dist/airgap/manifest.json` with the configured image references. It does not pull, save, or package container images.
 
-On the offline host:
+Copy the prepared repository and required `.osm.pbf` or `.mbtiles` data files to the air-gapped host. Create its `.env` with the correct Artifactory references.
+
+On the air-gapped host:
 
 ```powershell
 .\scripts\load-airgap-bundle.ps1
 ```
 
-If the offline host must generate vector MBTiles, copy the `.osm.pbf` into `data/input/` and ensure Planetiler support data was prepared online first. Otherwise, generate `data/mbtiles/osm-vector.mbtiles` online and copy the MBTiles file.
+The script validates the Compose configuration, pulls TileServer GL, Nginx, and Planetiler from Artifactory, and starts TileServer GL plus the viewer. It assumes Docker is already authenticated to Artifactory.
 
-## 7. Validation
+If the air-gapped host must generate vector MBTiles, copy the `.osm.pbf` into `data/input/` and ensure Planetiler support data was prepared beforehand. Otherwise, generate `data/mbtiles/osm-vector.mbtiles` on the preparation machine and copy the MBTiles file.
+
+## 8. Validation
 
 Run:
 
@@ -138,13 +163,13 @@ After starting the stack, verify:
 - `/styles/osm-bright/style.json`, `/styles/dark-matter/style.json`, `/styles/osm-openmaptiles/style.json`, and `/styles/osm-liberty/style.json` load.
 - Viewer base switching and overlay opacity controls work.
 
-## 8. GitHub Publication
+## 9. GitHub Publication
 
-The repository should not include real `.osm.pbf`, `.mbtiles`, or Docker image tar files. Confirm before publishing:
+The repository should not include real `.osm.pbf` or `.mbtiles` files. Confirm before publishing:
 
 ```powershell
 git status --short
-git check-ignore data/input/source.osm.pbf data/mbtiles/osm-vector.mbtiles dist/airgap/docker-images.tar
+git check-ignore data/input/source.osm.pbf data/mbtiles/osm-vector.mbtiles
 ```
 
 Create and push a public repo:
@@ -160,6 +185,6 @@ git remote add origin https://github.com/<owner>/tileserver-osm-airgap.git
 git push -u origin main
 ```
 
-## 9. Notes on the “Official” OSM Style
+## 10. Notes on the “Official” OSM Style
 
 The OpenStreetMap website standard style is `openstreetmap-carto`, a Mapnik/PostGIS raster rendering stack. This project is intentionally TileServer GL plus OpenMapTiles-compatible vector MBTiles, so it provides `osm-openmaptiles` as the Carto-inspired official-like vector style. Running the exact `openstreetmap-carto` renderer would require a separate raster rendering pipeline and database.
