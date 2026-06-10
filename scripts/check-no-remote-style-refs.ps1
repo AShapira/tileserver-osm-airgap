@@ -18,4 +18,29 @@ if ($matches) {
   throw "Remote references found in local style/viewer files."
 }
 
-Write-Host "No remote style or viewer references found."
+$fontPath = Join-Path $repoRoot "tileserver/fonts"
+$missingFonts = @()
+foreach ($styleFile in Get-ChildItem -Path (Join-Path $repoRoot "tileserver/styles") -Filter "*.json" -File) {
+  $style = Get-Content -Raw -Path $styleFile.FullName | ConvertFrom-Json
+  if ($style.glyphs -ne "{fontstack}/{range}.pbf") {
+    throw "Style $($styleFile.Name) must use the relative glyph URL {fontstack}/{range}.pbf."
+  }
+
+  foreach ($layer in $style.layers) {
+    if ($null -eq $layer.layout -or -not ($layer.layout.PSObject.Properties.Name -contains "text-font")) {
+      continue
+    }
+    foreach ($font in $layer.layout."text-font") {
+      if (-not (Test-Path (Join-Path $fontPath "$font/0-255.pbf"))) {
+        $missingFonts += "$($styleFile.Name): $font"
+      }
+    }
+  }
+}
+
+if ($missingFonts) {
+  $missingFonts | Sort-Object -Unique | ForEach-Object { Write-Host $_ }
+  throw "Bundled styles reference missing font glyphs."
+}
+
+Write-Host "No remote references or missing style fonts found."

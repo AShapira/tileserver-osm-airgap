@@ -11,7 +11,7 @@
                                      }
                 },
     "sprite":  "dark-matter/sprite",
-    "glyphs":  "/fonts/{fontstack}/{range}.pbf",
+    "glyphs":  "{fontstack}/{range}.pbf",
     "layers":  [
                    {
                        "id":  "background",
@@ -245,7 +245,7 @@
                                       "text-field":  "{name:latin}\n{name:nonlatin}",
                                       "text-font":  [
                                                         "Metropolis Medium Italic",
-                                                        "Noto Sans Italic"
+                                                        "Klokantech Noto Sans Italic"
                                                     ],
                                       "text-rotation-alignment":  "map",
                                       "text-size":  12
@@ -1259,7 +1259,7 @@
                                       "text-field":  "{name:latin} {name:nonlatin}",
                                       "text-font":  [
                                                         "Metropolis Regular",
-                                                        "Noto Sans Regular"
+                                                        "Klokantech Noto Sans Regular"
                                                     ],
                                       "text-max-angle":  30,
                                       "text-pitch-alignment":  "viewport",
@@ -1306,7 +1306,7 @@
                                       "text-field":  "{ref}",
                                       "text-font":  [
                                                         "Metropolis Light",
-                                                        "Noto Sans Regular"
+                                                        "Klokantech Noto Sans Regular"
                                                     ],
                                       "text-pitch-alignment":  "viewport",
                                       "text-rotation-alignment":  "viewport",
@@ -1496,7 +1496,7 @@
                                       "text-field":  "{name:latin}\n{name:nonlatin}",
                                       "text-font":  [
                                                         "Metropolis Regular",
-                                                        "Noto Sans Regular"
+                                                        "Klokantech Noto Sans Regular"
                                                     ],
                                       "text-justify":  "center",
                                       "text-offset":  [
@@ -1541,7 +1541,7 @@
                                       "text-field":  "{name:latin}\n{name:nonlatin}",
                                       "text-font":  [
                                                         "Metropolis Regular",
-                                                        "Noto Sans Regular"
+                                                        "Klokantech Noto Sans Regular"
                                                     ],
                                       "text-justify":  "center",
                                       "text-offset":  [
@@ -1587,7 +1587,7 @@
                                       "text-field":  "{name:latin}\n{name:nonlatin}",
                                       "text-font":  [
                                                         "Metropolis Regular",
-                                                        "Noto Sans Regular"
+                                                        "Klokantech Noto Sans Regular"
                                                     ],
                                       "text-justify":  "left",
                                       "text-offset":  [
@@ -1659,7 +1659,7 @@
                                       "text-field":  "{name:latin}\n{name:nonlatin}",
                                       "text-font":  [
                                                         "Metropolis Regular",
-                                                        "Noto Sans Regular"
+                                                        "Klokantech Noto Sans Regular"
                                                     ],
                                       "text-justify":  "left",
                                       "text-offset":  [
@@ -1736,7 +1736,7 @@
                                       "text-field":  "{name:latin}\n{name:nonlatin}",
                                       "text-font":  [
                                                         "Metropolis Regular",
-                                                        "Noto Sans Regular"
+                                                        "Klokantech Noto Sans Regular"
                                                     ],
                                       "text-justify":  "left",
                                       "text-offset":  [
@@ -1813,7 +1813,7 @@
                                       "text-field":  "{name:latin}\n{name:nonlatin}",
                                       "text-font":  [
                                                         "Metropolis Regular",
-                                                        "Noto Sans Regular"
+                                                        "Klokantech Noto Sans Regular"
                                                     ],
                                       "text-justify":  "left",
                                       "text-offset":  [
@@ -1858,7 +1858,7 @@
                                       "text-field":  "{name:latin}\n{name:nonlatin}",
                                       "text-font":  [
                                                         "Metropolis Regular",
-                                                        "Noto Sans Regular"
+                                                        "Klokantech Noto Sans Regular"
                                                     ],
                                       "text-size":  10,
                                       "text-transform":  "uppercase",
@@ -1901,7 +1901,7 @@
                                       "text-field":  "{name:latin}",
                                       "text-font":  [
                                                         "Metropolis Light Italic",
-                                                        "Noto Sans Italic"
+                                                        "Klokantech Noto Sans Italic"
                                                     ],
                                       "text-size":  {
                                                         "base":  1,
@@ -1960,7 +1960,7 @@
                                       "text-field":  "{name:latin}",
                                       "text-font":  [
                                                         "Metropolis Regular",
-                                                        "Noto Sans Regular"
+                                                        "Klokantech Noto Sans Regular"
                                                     ],
                                       "text-size":  {
                                                         "base":  1,
@@ -2020,7 +2020,7 @@
                                       "text-field":  "{name:latin}",
                                       "text-font":  [
                                                         "Metropolis Regular",
-                                                        "Noto Sans Regular"
+                                                        "Klokantech Noto Sans Regular"
                                                     ],
                                       "text-size":  {
                                                         "base":  1.4,

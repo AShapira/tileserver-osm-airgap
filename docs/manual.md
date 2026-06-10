@@ -26,10 +26,10 @@ docker compose config
 - OSM Bright.
 - Dark Matter.
 - OSM Liberty.
-- OpenMapTiles fonts.
+- The subset of OpenMapTiles fonts referenced by the bundled styles.
 - Style sprites.
 
-The script rewrites style `sources`, `glyphs`, and `sprite` URLs to local TileServer paths.
+The script rewrites style `sources`, `glyphs`, font stacks, and `sprite` URLs to local TileServer paths. It copies only the required glyph PBF directories and excludes upstream ZIP archives.
 
 ## 3. Generate Vector MBTiles from an Existing PBF
 

@@ -20,13 +20,50 @@ function Write-Json($Object, $Path) {
   [System.IO.File]::WriteAllText($Path, $json, $utf8NoBom)
 }
 
+$fontAliases = @{
+  "Noto Sans Bold" = "Klokantech Noto Sans Bold"
+  "Noto Sans Italic" = "Klokantech Noto Sans Italic"
+  "Noto Sans Regular" = "Klokantech Noto Sans Regular"
+  "Roboto Condensed Italic" = "Open Sans Italic"
+  "Roboto Medium" = "Open Sans Regular"
+  "Roboto Regular" = "Open Sans Regular"
+}
+
+$requiredFonts = @(
+  "Klokantech Noto Sans Bold",
+  "Klokantech Noto Sans Italic",
+  "Klokantech Noto Sans Regular",
+  "Metropolis Light",
+  "Metropolis Light Italic",
+  "Metropolis Medium Italic",
+  "Metropolis Regular",
+  "Open Sans Italic",
+  "Open Sans Regular"
+)
+
+function Set-LocalFonts($Style) {
+  $Style.glyphs = "{fontstack}/{range}.pbf"
+
+  foreach ($layer in $Style.layers) {
+    if ($null -eq $layer.layout -or -not ($layer.layout.PSObject.Properties.Name -contains "text-font")) {
+      continue
+    }
+
+    $layer.layout."text-font" = @(
+      $layer.layout."text-font" | ForEach-Object {
+        if ($fontAliases.ContainsKey($_)) { $fontAliases[$_] } else { $_ }
+      }
+    )
+  }
+}
+
 function Set-LocalStyle($InputPath, $OutputPath, $Name, $SpriteId) {
   $style = Read-Json $InputPath
   $style.name = $Name
   $style.metadata = [ordered]@{
     description = "$Name localized for air-gapped TileServer GL."
   }
-  $style.glyphs = "/fonts/{fontstack}/{range}.pbf"
+  Set-LocalFonts $style
 
   $sources = [ordered]@{}
   $sources.openmaptiles = [ordered]@{
@@ -59,7 +96,7 @@ function Copy-StyleAsOpenMapTiles($InputPath, $OutputPath) {
     description = "Carto-inspired OpenMapTiles-compatible vector style localized for air-gapped TileServer GL."
   }
   $style.metadata = $metadata
-  $style.glyphs = "/fonts/{fontstack}/{range}.pbf"
+  Set-LocalFonts $style
   $style.sprite = "osm-bright/sprite"
   Write-Json $style $OutputPath
 }
@@ -100,16 +137,26 @@ Copy-StyleAsOpenMapTiles (Join-Path $styles "osm-bright.json") (Join-Path $style
 
 if (-not $SkipFonts) {
   $fontsPath = Join-Path $repoRoot "tileserver/fonts"
-  if (Test-Path (Join-Path $fontsPath ".git")) {
-    git -C $fontsPath pull --ff-only
+  $tmpFonts = Join-Path $repoRoot "dist/upstream/fonts"
+  if (Test-Path (Join-Path $tmpFonts ".git")) {
+    git -C $tmpFonts pull --ff-only
   } else {
-    $tmpFonts = Join-Path $repoRoot "dist/upstream/fonts"
     if (Test-Path $tmpFonts) {
       Remove-Item -Path $tmpFonts -Recurse -Force
     }
     git clone --depth 1 --branch gh-pages https://github.com/openmaptiles/fonts.git $tmpFonts
-    Get-ChildItem -Path $fontsPath -Force | Where-Object { $_.Name -ne "README.md" } | Remove-Item -Recurse -Force
-    Get-ChildItem -Path $tmpFonts -Force | Where-Object { $_.Name -ne ".git" } | Copy-Item -Destination $fontsPath -Recurse -Force
+  }
+
+  Get-ChildItem -Path $fontsPath -Force |
+    Where-Object { $_.Name -ne "README.md" } |
+    Remove-Item -Recurse -Force
+
+  foreach ($font in $requiredFonts) {
+    $sourceFont = Join-Path $tmpFonts $font
+    if (-not (Test-Path (Join-Path $sourceFont "0-255.pbf"))) {
+      throw "Required font is missing from the upstream bundle: $font"
+    }
+    Copy-Item -Path $sourceFont -Destination $fontsPath -Recurse -Force
   }
 }
 
