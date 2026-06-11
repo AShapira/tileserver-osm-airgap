@@ -79,6 +79,18 @@
           maxzoom: Number(tileJson.maxzoom || 14),
           attribution: tileJson.attribution
         };
+        layerConfig.rasterOverlays.forEach((overlay) => {
+          if (!styleJson.sources[overlay.id]) return;
+          styleJson.sources[overlay.id] = {
+            type: "raster",
+            tiles: [
+              absoluteTileServerUrl(overlay.tiles || `/data/${overlay.id}/{z}/{x}/{y}.png`)
+            ],
+            tileSize: overlay.tileSize || 256,
+            minzoom: overlay.minzoom ?? 0,
+            maxzoom: overlay.maxzoom ?? 22
+          };
+        });
         styleJson.layers = (styleJson.layers || []).filter((layer) => {
           return !layer["source-layer"] || availableLayers.has(layer["source-layer"]);
         });
@@ -92,6 +104,10 @@
       function addOverlay(overlay) {
         const sourceId = overlay.id;
         const layerId = overlayLayerId(overlay.id);
+        const sourceMinzoom = overlay.minzoom ?? 0;
+        const sourceMaxzoom = overlay.maxzoom ?? 22;
+        const layerMinzoom = overlay.layerMinzoom ?? sourceMinzoom;
+        const layerMaxzoom = overlay.layerMaxzoom ?? sourceMaxzoom;
 
         if (!map.getSource(sourceId)) {
           map.addSource(sourceId, {
@@ -100,8 +116,8 @@
               absoluteTileServerUrl(overlay.tiles || `/data/${overlay.id}/{z}/{x}/{y}.png`)
             ],
             tileSize: overlay.tileSize || 256,
-            minzoom: overlay.minzoom || 0,
-            maxzoom: overlay.maxzoom || 22
+            minzoom: sourceMinzoom,
+            maxzoom: sourceMaxzoom
           });
         }
 
@@ -110,8 +126,8 @@
             id: layerId,
             type: "raster",
             source: sourceId,
-            minzoom: overlay.minzoom || 0,
-            maxzoom: overlay.maxzoom || 22,
+            minzoom: layerMinzoom,
+            maxzoom: layerMaxzoom,
             paint: {
               "raster-opacity": overlay.opacity ?? 0.6,
               "raster-resampling": "linear"
@@ -120,6 +136,9 @@
               visibility: overlay.visible ? "visible" : "none"
             }
           });
+        } else {
+          map.setLayoutProperty(layerId, "visibility", overlay.visible ? "visible" : "none");
+          map.setPaintProperty(layerId, "raster-opacity", overlay.opacity ?? 0.6);
         }
       }
 

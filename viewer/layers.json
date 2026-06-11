@@ -8,6 +8,11 @@
       "url": "/styles/osm-bright/style.json"
     },
     {
+      "id": "osm-bright-raster",
+      "label": "OSM Bright + Raster Scales",
+      "url": "/styles/osm-bright-raster/style.json"
+    },
+    {
       "id": "dark-matter",
       "label": "Dark Matter",
       "url": "/styles/dark-matter/style.json"
@@ -29,7 +34,9 @@
       "label": "Raster low scale",
       "tiles": "/data/raster-demo-low/{z}/{x}/{y}.png",
       "minzoom": 0,
-      "maxzoom": 8,
+      "maxzoom": 4,
+      "layerMinzoom": 0,
+      "layerMaxzoom": 5,
       "opacity": 0.55,
       "visible": true
     },
@@ -37,10 +44,12 @@
       "id": "raster-demo-high",
       "label": "Raster high scale",
       "tiles": "/data/raster-demo-high/{z}/{x}/{y}.png",
-      "minzoom": 7,
-      "maxzoom": 14,
+      "minzoom": 3,
+      "maxzoom": 6,
+      "layerMinzoom": 3,
+      "layerMaxzoom": 7,
       "opacity": 0.65,
-      "visible": false
+      "visible": true
     }
   ]
 }

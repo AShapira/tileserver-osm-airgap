@@ -101,6 +101,63 @@ function Copy-StyleAsOpenMapTiles($InputPath, $OutputPath) {
   Write-Json $style $OutputPath
 }
 
+function Copy-StyleWithRasterScales($InputPath, $OutputPath) {
+  $style = Read-Json $InputPath
+  $style.name = "OSM Bright + Raster Scales"
+  $style.metadata = [ordered]@{
+    description = "OSM Bright vector base with low- and high-scale raster MBTiles overlays."
+  }
+
+  $sources = [ordered]@{}
+  foreach ($source in $style.sources.PSObject.Properties) {
+    $sources[$source.Name] = $source.Value
+  }
+  $sources["raster-demo-low"] = [ordered]@{
+    type = "raster"
+    url = "mbtiles://raster-demo-low.mbtiles"
+    tileSize = 256
+    minzoom = 0
+    maxzoom = 4
+  }
+  $sources["raster-demo-high"] = [ordered]@{
+    type = "raster"
+    url = "mbtiles://raster-demo-high.mbtiles"
+    tileSize = 256
+    minzoom = 3
+    maxzoom = 6
+  }
+  $style.sources = $sources
+
+  $style.layers = @($style.layers) + @(
+    [pscustomobject][ordered]@{
+      id = "overlay-raster-demo-low"
+      type = "raster"
+      source = "raster-demo-low"
+      minzoom = 0
+      maxzoom = 5
+      layout = [ordered]@{ visibility = "visible" }
+      paint = [ordered]@{
+        "raster-opacity" = 0.55
+        "raster-resampling" = "linear"
+      }
+    },
+    [pscustomobject][ordered]@{
+      id = "overlay-raster-demo-high"
+      type = "raster"
+      source = "raster-demo-high"
+      minzoom = 3
+      maxzoom = 7
+      layout = [ordered]@{ visibility = "visible" }
+      paint = [ordered]@{
+        "raster-opacity" = 0.65
+        "raster-resampling" = "linear"
+      }
+    }
+  )
+
+  Write-Json $style $OutputPath
+}
+
 $upstream = Join-Path $repoRoot "dist/upstream"
 $styles = Join-Path $repoRoot "tileserver/styles"
 $sprites = Join-Path $repoRoot "tileserver/sprites"
@@ -134,6 +191,7 @@ foreach ($source in $styleSources) {
 }
 
 Copy-StyleAsOpenMapTiles (Join-Path $styles "osm-bright.json") (Join-Path $styles "osm-openmaptiles.json")
+Copy-StyleWithRasterScales (Join-Path $styles "osm-bright.json") (Join-Path $styles "osm-bright-raster.json")
 
 if (-not $SkipFonts) {
   $fontsPath = Join-Path $repoRoot "tileserver/fonts"

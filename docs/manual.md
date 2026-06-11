@@ -140,6 +140,8 @@ Open:
 
 Use the viewer to switch among OSM Bright, Dark Matter, OSM OpenMapTiles, and OSM Liberty, then toggle raster overlays.
 
+The `OSM Bright + Raster Scales` option is a single Mapbox GL style containing the OSM Bright vector base plus both demo raster MBTiles. The low-scale source contains zooms 0-4 and is displayed below zoom 5. The high-scale source contains zooms 3-6 and is displayed from zoom 3 up to zoom 7, so both layers are visible at zooms 3-4. Raster toggles and opacity controls use the same layer IDs and continue to work after style changes.
+
 ## 7. Air-Gapped Deployment Bundle
 
 On the asset preparation machine:

@@ -1,6 +1,6 @@
 # Tileserver OSM Airgap
 
-Docker Compose stack for serving air-gapped OpenStreetMap vector MBTiles and raster MBTiles with TileServer GL. It includes Planetiler-based vector generation from one or many `.osm.pbf` extracts, Osmium merging, local OpenMapTiles-compatible styles, and a MapLibre viewer that combines a vector base map with multiple raster overlays.
+Docker Compose stack for serving air-gapped OpenStreetMap vector MBTiles and raster MBTiles with TileServer GL. It includes Planetiler-based vector generation from one or many `.osm.pbf` extracts, Osmium merging, local OpenMapTiles-compatible styles, and a MapLibre viewer that combines a vector base map with multiple raster overlays. The optional `OSM Bright + Raster Scales` style packages the vector base and zoom-dependent raster layers into one Mapbox GL style.
 
 ## Quick Start
 
@@ -20,6 +20,8 @@ Open:
 
 - TileServer GL: http://localhost:8080
 - Combined MapLibre viewer: http://localhost:8081
+
+Select `OSM Bright + Raster Scales` to display both demo raster MBTiles over the OSM vector base. The low-scale raster is visible at map zooms 0 through 4, the high-scale raster at zooms 3 through 6, and both are visible in the overlapping zoom range.
 
 ## Data Layout
 
