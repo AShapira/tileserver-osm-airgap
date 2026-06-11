@@ -10,21 +10,25 @@ $repoRoot = Split-Path -Parent $PSScriptRoot
 
 if (-not $Pbf) { $Pbf = "data/input/source.osm.pbf" }
 if (-not $Output) { $Output = "data/mbtiles/osm-vector.mbtiles" }
-if (-not $Memory) { $Memory = "-Xmx4g" }
+if (-not $Memory) { $Memory = "-Xmx8g" }
 
 $pbfPath = Resolve-Path -Path (Join-Path $repoRoot $Pbf) -ErrorAction Stop
 $outputPath = Join-Path $repoRoot $Output
-New-Item -ItemType Directory -Force -Path (Split-Path -Parent $outputPath) | Out-Null
 
-$pbfRelative = [System.IO.Path]::GetRelativePath((Join-Path $repoRoot "data"), $pbfPath.Path).Replace("\", "/")
-$outputRelative = [System.IO.Path]::GetRelativePath((Join-Path $repoRoot "data"), $outputPath).Replace("\", "/")
+$dataRoot = [System.IO.Path]::GetFullPath((Join-Path $repoRoot "data")).TrimEnd("\", "/") + [System.IO.Path]::DirectorySeparatorChar
+$pbfFullPath = [System.IO.Path]::GetFullPath($pbfPath.Path)
+$outputFullPath = [System.IO.Path]::GetFullPath($outputPath)
 
-if ($pbfRelative.StartsWith("..")) {
+if (-not $pbfFullPath.StartsWith($dataRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
   throw "PBF must be under data/ so the Planetiler container can read it. Put it under data/input/."
 }
-if ($outputRelative.StartsWith("..")) {
+if (-not $outputFullPath.StartsWith($dataRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
   throw "Output must be under data/ so the Planetiler container can write it. Use data/mbtiles/osm-vector.mbtiles."
 }
+
+$pbfRelative = $pbfFullPath.Substring($dataRoot.Length).Replace("\", "/")
+$outputRelative = $outputFullPath.Substring($dataRoot.Length).Replace("\", "/")
+New-Item -ItemType Directory -Force -Path (Split-Path -Parent $outputFullPath) | Out-Null
 
 $env:PLANETILER_JAVA_OPTS = $Memory
 $args = @(
@@ -37,4 +41,3 @@ if (-not $Offline) {
 }
 
 docker compose --profile generate run --rm planetiler @args
-

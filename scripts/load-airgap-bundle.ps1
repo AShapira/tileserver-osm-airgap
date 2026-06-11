@@ -1,3 +1,7 @@
+param(
+  [switch]$IncludeGenerationTools
+)
+
 $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path -Parent $PSScriptRoot
 
@@ -8,7 +12,12 @@ try {
     throw "Invalid Docker Compose configuration. Copy .env.example to .env and set the Artifactory image paths."
   }
 
-  docker compose pull tileserver viewer planetiler
+  $services = @("tileserver", "viewer")
+  if ($IncludeGenerationTools) {
+    $services += @("planetiler", "osmium")
+  }
+
+  docker compose pull @services
   if ($LASTEXITCODE -ne 0) {
     throw "Failed to pull one or more images from Artifactory. Verify the image paths and existing Docker registry authentication."
   }

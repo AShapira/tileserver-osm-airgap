@@ -4,6 +4,7 @@
 
 - Docker with Docker Compose v2.
 - Git.
+- curl for resumable Geofabrik country downloads.
 - Python 3 for the synthetic demo raster MBTiles script.
 - PowerShell 7 or Windows PowerShell. Bash wrappers are included for Linux hosts that also have `pwsh`.
 - Network access to the internal Artifactory Docker registry and Docker authentication configured on each host.
@@ -24,9 +25,10 @@ Edit `.env` and replace the example host and repository paths with the full Arti
 TILESERVER_IMAGE=artifactory.example.com/docker/maptiler/tileserver-gl:latest
 VIEWER_IMAGE=artifactory.example.com/docker/library/nginx:alpine
 PLANETILER_IMAGE=artifactory.example.com/docker/onthegomap/planetiler:latest
+OSMIUM_IMAGE=artifactory.example.com/docker/iboates/osmium:latest
 ```
 
-The exact Artifactory repository layout may differ. The image variables are mandatory so Docker Compose cannot fall back to Docker Hub or GHCR.
+The exact Artifactory repository layout may differ. The four image variables are mandatory so Docker Compose cannot fall back to Docker Hub or GHCR. The Osmium image must provide an `osmium` executable compatible with `osmium merge`.
 
 ## 3. Prepare Non-Image Assets
 
@@ -82,6 +84,20 @@ PLANETILER_JAVA_OPTS=-Xmx32g
 
 Planetiler needs fast disk and temporary space. Budget several times the PBF size for working data.
 
+### Generate one MBTiles from multiple countries
+
+The multi-country orchestrator downloads a common dated Geofabrik snapshot, verifies MD5 checksums, merges the extracts with Osmium, and runs Planetiler once:
+
+```powershell
+.\scripts\generate-country-mbtiles.ps1 `
+  -Countries israel,lebanon,finland `
+  -SnapshotDate 2026-06-01 `
+  -Output data/mbtiles/osm-vector.mbtiles `
+  -Force
+```
+
+`israel` is an alias for Geofabrik's `israel-and-palestine` region. The command therefore includes the complete maintained Israel-and-Palestine extract. See [combined-country-mbtiles.md](combined-country-mbtiles.md) for local-PBF, offline, cache, rerun, and troubleshooting procedures.
+
 ## 5. Add Existing Raster MBTiles
 
 Copy existing raster MBTiles into:
@@ -136,13 +152,19 @@ This vendors the non-image web/style assets, optionally creates demo raster MBTi
 
 Copy the prepared repository and required `.osm.pbf` or `.mbtiles` data files to the air-gapped host. Create its `.env` with the correct Artifactory references.
 
-On the air-gapped host:
+On the air-gapped host, start only the serving stack:
 
 ```powershell
 .\scripts\load-airgap-bundle.ps1
 ```
 
-The script validates the Compose configuration, pulls TileServer GL, Nginx, and Planetiler from Artifactory, and starts TileServer GL plus the viewer. It assumes Docker is already authenticated to Artifactory.
+When the air-gapped host must also merge PBFs or generate MBTiles, pull both generation tools from Artifactory:
+
+```powershell
+.\scripts\load-airgap-bundle.ps1 -IncludeGenerationTools
+```
+
+The script validates the Compose configuration, pulls the requested images from Artifactory, and starts TileServer GL plus the viewer. It assumes Docker is already authenticated to Artifactory.
 
 If the air-gapped host must generate vector MBTiles, copy the `.osm.pbf` into `data/input/` and ensure Planetiler support data was prepared beforehand. Otherwise, generate `data/mbtiles/osm-vector.mbtiles` on the preparation machine and copy the MBTiles file.
 

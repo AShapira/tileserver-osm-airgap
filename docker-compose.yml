@@ -28,6 +28,13 @@ services:
     image: ${PLANETILER_IMAGE:?Set PLANETILER_IMAGE to its Artifactory image path}
     profiles: ["generate"]
     environment:
-      JAVA_TOOL_OPTIONS: ${PLANETILER_JAVA_OPTS:--Xmx4g}
+      JAVA_TOOL_OPTIONS: ${PLANETILER_JAVA_OPTS:--Xmx8g}
+    volumes:
+      - ./data:/data
+
+  osmium:
+    image: ${OSMIUM_IMAGE:?Set OSMIUM_IMAGE to its Artifactory image path}
+    profiles: ["generate"]
+    entrypoint: ["osmium"]
     volumes:
       - ./data:/data

@@ -1,12 +1,12 @@
 # Tileserver OSM Airgap
 
-Docker Compose stack for serving air-gapped OpenStreetMap vector MBTiles and raster MBTiles with TileServer GL. It includes Planetiler-based vector generation from an existing `.osm.pbf`, local OpenMapTiles-compatible styles, and a MapLibre viewer that combines a vector base map with multiple raster overlays.
+Docker Compose stack for serving air-gapped OpenStreetMap vector MBTiles and raster MBTiles with TileServer GL. It includes Planetiler-based vector generation from one or many `.osm.pbf` extracts, Osmium merging, local OpenMapTiles-compatible styles, and a MapLibre viewer that combines a vector base map with multiple raster overlays.
 
 ## Quick Start
 
 ```powershell
 Copy-Item .env.example .env
-# Edit .env so all three image variables point to Artifactory.
+# Edit .env so all four image variables point to Artifactory.
 .\scripts\vendor-assets.ps1
 .\scripts\generate-demo-raster-mbtiles.ps1
 
@@ -50,6 +50,13 @@ viewer/
 # Generate vector MBTiles from an existing PBF
 .\scripts\generate-vector-mbtiles.ps1 -Pbf data/input/source.osm.pbf
 
+# Download, merge, and generate one MBTiles from several countries
+.\scripts\generate-country-mbtiles.ps1 `
+  -Countries israel,lebanon,finland `
+  -SnapshotDate 2026-06-01 `
+  -Output data/mbtiles/osm-vector.mbtiles `
+  -Force
+
 # Prepare transferable non-image assets and a deployment manifest
 .\scripts\prepare-online-bundle.ps1
 
@@ -57,6 +64,6 @@ viewer/
 .\scripts\load-airgap-bundle.ps1
 ```
 
-All container images are expected to be available from Artifactory inside the air-gapped network. The project does not download public images, export image tar files, or transfer images between networks. Set `TILESERVER_IMAGE`, `VIEWER_IMAGE`, and `PLANETILER_IMAGE` in `.env` to their full Artifactory paths; Docker registry authentication is assumed to be configured on the host.
+All container images are expected to be available from Artifactory inside the air-gapped network. The project does not download public images, export image tar files, or transfer images between networks. Set `TILESERVER_IMAGE`, `VIEWER_IMAGE`, `PLANETILER_IMAGE`, and `OSMIUM_IMAGE` in `.env` to their full Artifactory paths; Docker registry authentication is assumed to be configured on the host.
 
-See [docs/manual.md](docs/manual.md) for the full step-by-step workflow.
+The country name `israel` intentionally resolves to Geofabrik's maintained `israel-and-palestine` extract. See [docs/combined-country-mbtiles.md](docs/combined-country-mbtiles.md) for snapshot, caching, air-gap, and troubleshooting details, and [docs/manual.md](docs/manual.md) for the complete stack workflow.
